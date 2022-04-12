@@ -1,0 +1,411 @@
+---
+title: 'Interactive Visualizations'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, fig.align='center', warning=F, message=F)
+```
+
+```{r include=FALSE, message=FALSE, warning=FALSE}
+library(data.table)
+library(tidyr)
+library(ggplot2)
+library(ggExtra)
+library(gridExtra)
+library(ggcorrplot)
+library(stringr)
+library(knitr)
+library(kableExtra)
+library(plotly)
+library(widgetframe)
+library(withr)
+library(treemapify)
+options(knitr.kable.NA = '')
+```
+
+
+```{r}
+theme_update(text = element_text(family = "sans", size=14),
+             plot.title = element_text(size=rel(1.2), hjust = 0),
+             plot.caption = element_text(size=rel(1.0), hjust = 0, colour="grey10"),
+             plot.margin = margin(15, 0, 15, 0))
+```
+
+
+
+```{r include=FALSE}
+# data wrangling
+dt <- fread("data-imdb-movies.csv")
+
+# rank by rating (high to low)
+dt <- cbind(1:nrow(dt), dt[order(rating, decreasing = T)])
+colnames(dt)[1] <- "rank"
+dt[, rating_level := ifelse(rating>=7.6, "High", "Low")]
+dt$rating_level <- factor(dt$rating_level, levels=c("High", "Low"))
+
+# adjust for inflation
+dt$gross_world <- 1.0178^(2019-dt$year) * dt$gross_world
+dt$gross_domestic <- 1.0178^(2019-dt$year) * dt$gross_domestic
+
+# correct errors in worldwide gross values
+idx <- which(dt$gross_domestic > dt$gross_world)
+dt[idx]$gross_world <- dt[idx]$gross_world + dt[idx]$gross_domestic
+
+# impute missing gross box office
+dt[is.na(gross_domestic)]$gross_domestic <- median(dt$gross_domestic, na.rm=T)
+dt[is.na(gross_world)]$gross_world <- median(dt$gross_world, na.rm=T)
+
+# time elasped since 2010 in years
+dt$year_offset <- dt$year - 2010
+
+# convert to factor
+dt$year <- factor(dt$year, levels=sort(unique(dt$year)))
+dt$genre <- factor(dt$genre, levels=data.table(sort(table(dt$genre), decreasing = T))$V1)
+
+# % of #votes from each demographic group
+dt$votesMperc <- dt$votesM / dt$votes * 100
+dt$votesFperc <- dt$votesF / dt$votes * 100
+dt$votesU18perc <- dt$votesU18 / dt$votes * 100
+dt$votes1829perc <- dt$votes1829 / dt$votes * 100
+dt$votes3044perc <- dt$votes3044 / dt$votes * 100
+dt$votes45Aperc <- dt$votes45A / dt$votes * 100
+dt$votesUSperc <- dt$votesUS / dt$votes * 100
+dt$votesNonUSperc <- dt$votesNonUS / dt$votes *100
+
+# within demo type perc
+dt$Fperc <- dt$votesF / (dt$votesF + dt$votesM) * 100
+dt$`<30perc` <- (dt$votesU18+dt$votes1829) / (dt$votesU18+dt$votes1829+dt$votes3044+dt$votes45A) * 100
+dt$USperc <- dt$votesUS / dt$votesNonUS * 100
+
+# votes ratios
+dt$`F/M` <- dt$votesFperc / dt$votesMperc
+dt$`<30/30+` <- (dt$votesU18perc + dt$votes1829perc) / (dt$votes3044perc + dt$votes45Aperc)
+dt$`US/nonUS` <- dt$votesUSperc / dt$votesNonUSperc
+
+# votes percentage diff
+dt$`A30-U30` <- -(dt$votesU18perc + dt$votes1829perc - dt$votes3044perc - dt$votes45Aperc)
+dt$`M-F` <- dt$votesMperc -dt$votesFperc
+dt$`nonUS-US` <- dt$votesNonUSperc -dt$votesUSperc
+
+# new data tables showing ratings and votes by gender/age/country in long form
+dbasic <- dt[, .(rank, title, year, genre, runtime, gross_world, gross_domestic, director, star)]
+
+dsub <- function(suffix, newcolname, newcolval) {
+  d <- dt[, .(rank, rating_level,
+              get(paste0("rating",suffix)), 
+              get(paste0("votes",suffix)), 
+              get(paste0("votes",suffix,"perc")))]
+  colnames(d)[2:5] <- c("rating_level", "rating", "votes", "votesperc")
+  d[, newcolname] <- newcolval
+  d$type <- newcolname
+  return(d)
+}
+
+dgender <- merge(dbasic, rbind(
+    dsub("M", "Gender", "Male"), 
+    dsub("F", "Gender", "Female")),
+  by="rank")
+
+dage <- merge(dbasic, rbind(
+    dsub("U18", "Age", "<18"), 
+    dsub("1829", "Age", "18-29"), 
+    dsub("3044", "Age", "30-44"), 
+    dsub("45A", "Age", "45+")),
+  by="rank")
+
+dlocation <- merge(dbasic, rbind(
+    dsub("US", "Location", "U.S."), 
+    dsub("NonUS", "Location", "Non U.S.")),
+  by="rank")
+
+ddemo <- rbind(dgender, dage, dlocation, use.names=FALSE)
+colnames(ddemo)[which(colnames(ddemo)=="Gender")] <- "demographic"
+
+# new director and star datasets
+get_mean_dt <- function(rowidx=1:nrow(dt), bycol="director") {
+  d <- dt[rowidx, .(.N, mean(rank), mean(rating), mean(votes), 
+                    mean(gross_world, na.rm=T), mean(gross_domestic, na.rm=T)),
+                by=bycol]
+  colnames(d) <- c(bycol, "freq", "rank", "rating", "votes", "gross_world", "gross_domestic")
+  
+  d$freq <- factor(d$freq, levels=sort(unique(d$freq), decreasing=T))
+  ord <- d[order(freq, rating)][, get(bycol)]
+  d[, eval(bycol) := factor(get(bycol), levels=ord)]
+  return(d)
+}
+
+ddirector <- get_mean_dt()
+ddirector_high <- get_mean_dt(dt$rating_level=="High")
+ddirector_low <- get_mean_dt(dt$rating_level=="Low")
+dstar <- get_mean_dt(bycol="star")
+dstar_high <- get_mean_dt(dt$rating_level=="High", "star")
+dstar_low <- get_mean_dt(dt$rating_level=="Low", "star")
+
+dt$director <- factor(dt$director, levels=levels(ddirector$director))
+dt$star <- factor(dt$star, levels=levels(dstar$star))
+dt[, director_freq:=.N, by=director]
+dt[, director_rating:=mean(rating), by=director]
+dt[, star_freq:=.N, by=star]
+dt[, star_rating:=mean(rating), by=star]
+
+dt_high <- dt[rating_level=="High"]
+dt_low <- dt[rating_level=="Low"]
+```
+
+### Rating vs. Continuous Attributes
+
+To begin, the following Figure 1 shows the correlation between the movies' continuous attributes and overall rating. Using the slide bar, you can compare the attributes' distributions by different rating level thresholds. By default, the threshold for high ratings is >7.5. This is because the minimum rating among movies in this dataset that occur in the current IMDb Top 1000 chart is 7.6. 
+
+<div style="text-align: left; margin-left: 40px; margin-bottom:0px; top: 15px; position: relative">
+
+<p style="margin-bottom:0px">
+
+Rating Level Threshold: [7.5]{#G1threshold} <br> Low ≤
+<input type="range" id="G1slider" name="rating threshold" min="4.5" max="8.5" value="7.5" step="0.5" onchange="updateG1(this.value);" list="steplist">
+<datalist id="steplist" style="margin-bottom:0px"> <option>4.5</option> <option>5.0</option>
+<option>5.5</option> <option>6.0</option> <option>6.5</option>
+<option>7.0</option> <option>7.5</option> <option>8.0</option>
+<option>8.5</option> </datalist> \<High
+
+</p>
+
+</div>
+
+```{r fig.width=8.28, fig.height=4.5}
+## Figure 1
+cols <- c("rating", "votes", "runtime", "gross_domestic", "gross_world")
+G1longdt <- data.table(pivot_longer(data.frame(dt[,..cols]), cols=all_of(c("votes", "runtime", "gross_domestic", "gross_world"))))
+
+G1longdt[name=="votes", value := value/1000]
+
+G1longdt$name <- factor(G1longdt$name, levels=c("votes", "runtime", "gross_domestic", "gross_world"), 
+                      labels=c("Total Votes (thousands)", "Run Time (mins)", "Domestic Gross ($millions)", "Worldwide Gross ($millions)"))
+G1longdt$rating_level <- "high"
+colnames(G1longdt) <- c("rating", "name", "value", "rating level")
+
+cors <- round(cor(dt[,..cols])[2:5,1],3)
+G1longdt$name2 <- factor(G1longdt$name, levels=levels(G1longdt$name), labels=paste("Corr:", cors))
+
+plotG1 <- function(th) {
+  
+  lvl <- c("high", "low")
+  clrs <- c("#F87660", "#00BFC4")
+  if (th>= 7.5) {
+     lvl <- rev(lvl)
+     clrs <- rev(clrs)
+  }
+  G1longdt$`rating level` <- factor(ifelse(G1longdt$rating>th, "high", "low"), levels=lvl)
+
+  g1 <- ggplot(G1longdt, aes(x=value, fill=`rating level`)) + 
+    scale_fill_manual(values=clrs) +
+    geom_histogram(bins=23, position="identity", alpha=0.38) +
+    facet_wrap(~name, scales="free_x", nrow=1) +
+    theme(text = element_text(size = 10), 
+          plot.caption = element_text(size = 10)) +
+    labs(y=element_blank(), x=element_blank(), fill="Rating Level") + 
+    theme_minimal() +
+    theme(panel.spacing.y = unit(3,"lines"), 
+          axis.ticks.x = element_blank(), 
+          axis.text.x = element_blank(), 
+          strip.text.x = element_text(size=10))
+
+
+  g11 <- ggplot(G1longdt, aes(x=value, y=rating, color=`rating level`)) + 
+    scale_color_manual(values=clrs) +
+    geom_point(alpha=0.2) +
+    facet_wrap(~name2, scales="free_x", nrow=1) +
+    theme(text = element_text(size = 10), plot.caption = element_text(size = 10)) +
+    geom_abline(slope=0, intercept = th, alpha=0.3, lty=2, lwd=1) +
+    labs(title="Movie Rating vs. Continuous Variables", y="Rating", x=element_blank(), 
+         color="Rating Level") + 
+    theme_minimal() +
+    theme(panel.spacing.y = unit(3,"lines"))
+
+
+  return(subplot(
+    with_options(list(digits=2), style(ggplotly(g1, tooltip=c("y","x","fill")), showlegend=F)),
+    with_options(list(digits=2), style(ggplotly(g11, tooltip=c("y","x")), showlegend=F)), 
+    titleX=T, titleY=T, nrows = 2, margin=0.022, heights=c(0.25, 0.75)
+  ) %>%
+    layout(
+      yaxis2=list(title="Rating"), font=list(size=12),
+      annotations=list(
+        list(x=0, y=-0.105, showarrow = F, xref='paper', yref='paper', font=list(size=12), text=paste0("Figure 1. The continuous attributes' correlation with rating and distribution by rating level with threshold ", th, "."))
+      )
+    ) )
+}
+
+thresholds <- seq(4.5, 8.5, 0.5)
+G1s <- list()
+for (i in 1:length(thresholds)) {
+  G1s[[i]] <- plotG1(thresholds[i])
+}
+thresholds <- paste(thresholds, collapse=',')
+G1s[[1]]
+G1s[[2]]
+G1s[[3]]
+G1s[[4]]
+G1s[[5]]
+G1s[[6]]
+G1s[[7]]
+G1s[[8]]
+G1s[[9]]
+```
+
+
+```{=html}
+<script>
+var thresholds = "`r thresholds`".split(',')
+</script>
+```
+```{js}
+const G1s = document.getElementsByClassName("plotly html-widget")
+var prev_th = Number(document.getElementById('G1threshold').innerText)
+const min_th = Number(thresholds[0])
+const n_th = thresholds.length
+
+for (var i = 0; i < n_th; i++) {
+  G1s[i].style.display = "none"
+}
+updateG1(prev_th)
+
+function updateG1(th) {
+  document.getElementById('G1threshold').innerText = th;
+  G1s[parseInt((prev_th-min_th) / 0.5)].style.display = "none"
+  G1s[parseInt((Number(th)-min_th) / 0.5)].style.display = "table"
+  prev_th = Number(th)
+}
+```
+
+By the grouped histogram and scatter plot, there is a moderate, positive correlation between the number of votes and the rating. There is also a weak, positive correlation between rating and run time. In comparison, there is not an obvious, significant correlation between rating and the box office variables. 
+
+### Rating vs. Genre and Year
+
+Next, Figure 2 shows the count and mean rating of movies by genre and year. 
+
+```{r fig.width=5.8, fig.height=4.8}
+d <- dt[, .(count = .N, rating = mean(rating)), by=c("genre", "year")]
+d <- rbind(dt[, .(genre="(Any)", year="(Any)", count=0, rating=mean(rating))], d)[-c(1),]
+
+d2 <- rbind(dt[,.(genre="(Any)", year="(Any)", count=.N, rating=mean(rating))],
+            rbind(
+  dt[, .(year = "(Any)", count = .N, rating=mean(rating)), by="genre"],
+  dt[, .(genre = "(Any)", count = .N, rating=mean(rating)), by="year"])
+  )
+d2$rating <- round(d2$rating, 1)
+
+g2 <- ggplot() +
+  scale_color_distiller(palette="RdYlBu") +
+  geom_point(data=d, aes(year, genre, color=rating, size=count)) +
+  geom_point(data=d2, aes(year, genre, color=rating, label=count), size=5, shape=15) +
+  geom_text(aes(year, genre, label=rating, fill=count), data=d2, color="grey35", size=3) +
+  geom_point(data=d2, aes(year, genre), color="grey70", size=5.5, shape=0, stroke=0.5) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = -0.2)) +
+  labs(title="Movie Count and Rating by Genre and Year",
+       x="Year\n.", y="Genre", color="Rating", size="Count") +
+  scale_x_discrete(limits=levels(d$year)) +
+  scale_y_discrete(limits=levels(d$genre))
+
+with_options(list(digits=2), ggplotly(g2)) %>%
+  layout(annotations=list(
+    x=0, y=-0.173, showarrow = F, xref='paper', yref='paper',
+    font=list(size=12), xshift=-18, text="Figure 2. The count (size) and mean rating (color) by genre and year.") 
+  ) %>%
+  style(hoverinfo = "none", traces = c(3,4))
+```
+
+Firstly, the averaged movie ratings in different years are similar, with slightly higher average ratings in years 2014-2017. 
+
+As for the genres, there are a lot more deviations. There is only one mystery movie and one scientific fiction movie. Although their ratings are above the average, we should not conclude this as a typical phenomenon. Among groups with a reasonably large size, crime, animation and biography movies tend to be highly rated. In addition, a majority of the drama movies have a good rating, with a few exceptionally low ratings in the second half of the decade. On the other hand, horror movies and comedy movies tend to have a lower rating than average. Comedy movies were very popular but received low ratings in the first demi-decade, which is in contrast to the lower counts but higher ratings in the second demi-decade. 
+
+### Rating vs. Star and Director
+
+The treemaps in Figure 3 demonstrate how movie ratings may correlate with star and director frequencies. Each individual tile represents one movie, with its colour determined by the movie rating. These movie tiles are divided into groups. Hovering over a grouping tile yields the count and mean rating of that frequency group. You can also click on an individual movie tile to look at detailed movie information. 
+
+
+```{r fig.width=7.5}
+## Figure 3
+image_file <- "./img/scale.png"
+txt <- RCurl::base64Encode(readBin(image_file, "raw", file.info(image_file)[1, "size"]), "txt")
+
+plotly_treemap <- function(col="director", p=NA) { 
+  if (col == "director") {
+    d <- ddirector
+    type <- "Director"
+    abbr <- "Dir."
+    col_freq <- "director_freq"
+  } else {
+    d <- dstar
+    type <- "Star"
+    abbr <- "Star"
+    col <- "star"
+    col_freq <- "star_freq"
+  }
+
+  lab <- paste("Freq :", as.character(levels(d$freq)))
+  title <- "" 
+  par <- rep(title, times=length(lab))
+  txt <- paste0("No. Movies : ", dt[,.N, by = col_freq][order(get(col_freq), decreasing=T), N], rep("\nMean ", times=length(lab)))
+  lab <- c(lab, paste0("Freq : ", dt[,get(col_freq)], '\n"', dt$title, '"'))
+  par <- c(par, paste("Freq :", dt[, get(col_freq)]))
+  #val <- c(300, 20, 18, 106, 136)
+  #val <- c(val, frequency)
+  val <- unlist(dt[, mean(rating), by=col_freq][order(get(col_freq), decreasing=T),2], use.names=F)
+  val <- c(val, dt$rating)
+  
+  txt <- paste0(c(txt, paste0(
+    paste(abbr, ":", dt[, get(col)], "\n"))), 
+    paste("Rating :",round(val, 1)))
+   
+  
+  df <- data.frame(x=1:length(val), y=1, col=val)
+  
+  # construct palette using ggplot
+  g <- ggplot(df, aes(x=x, y=y, color=col)) + geom_point(size=1) +
+    scale_color_distiller(palette="RdYlBu")
+  clr <- ggplot_build(g)$data[[1]]$colour
+  
+  if (is.na(p)) {
+    plot_ly(
+      type="treemap",
+      labels=lab,
+      parents=par,
+      marker=list(colors=clr),
+      text=txt,
+      sort=F,
+      domain=list(column=0),
+      hovertemplate="%{label}<br>%{text}<extra></extra>"
+    )
+  } else {
+    add_trace(p,
+      type="treemap",
+      labels=lab,
+      parents=par,
+      marker=list(colors=clr),
+      text=txt,
+      sort=F,
+      domain=list(column=1),
+      hovertemplate="%{label}<br>%{text}<extra></extra>"
+    )
+  }
+}
+
+p <- plotly_treemap("star")
+plotly_treemap("director", p) %>%
+  layout(
+    grid=list(columns=2, rows=1), tracegroupgap=0,
+    margin=list(l=0, r=0, b=20, t=0),
+  annotations=list(list(
+    x=0, y=-0.035, xshift=3, showarrow = F, xref='paper', yref='paper',
+    font=list(size=12, color="black"), text="Figure 3. Movies and their ratings grouped by star and director frequencies."),
+    list(x=0.12, y=1, showarrow=F, xref='paper', yref='paper', font=list(size=14, color="black"), text="Movies by Star Frequency"),
+    list(x=0.92, y=1, showarrow=F, xref='paper', yref='paper', font=list(size=14, color="black"), text="Movies by Director Frequency")
+    ),
+  images=list(list(source=paste('data:image/png;base64', txt, sep=','), xref='paper', yref='paper', x=0.478, y=0.66, sizex=0.8, sizey=0.27, layer="above"))
+  )
+
+```
+
+There are 185 unique stars and 200 unique directors. Based on the size and the hover info of the grouping tiles, over 40% of the movies belong to the *freq 1* group.
+In the overall perspective, there is an obvious increase in the mean rating as the director frequency increases. In contrast, we do not observe any significant linear relationship between the star frequency and the movie rating. Surprisingly, the group of frequency 8 is the one with the lowest mean rating. This potentially suggests that the movie quality depends more on the experience of the director rather than the star.

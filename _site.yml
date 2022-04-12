@@ -1,0 +1,21 @@
+name: "Movie Rating Analysis"
+output_dir: "."
+navbar:
+  title: "Movie Rating Analysis"
+  left:
+    - text: "Context and Dataset"
+      href: index.html
+    - text: "Interactive Visualizations"
+      href: visuals.html
+  right:
+    - icon: fa-github fa-lg
+      href: https://github.com/lsxnaa/movie-rating-visualizations
+output:
+  html_document:
+    theme: paper
+    include:
+      after_body: footer.html
+    css: styles.css
+    toc: true
+    toc_float: true
+    toc_depth: 4
