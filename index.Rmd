@@ -2,12 +2,11 @@
 title: "IMDb Ratings of Popular U.S. Movies in the 2010s"
 ---
 
-### A Brief Introduction
+### Background and Context
 
-After a busy week, when the weekend finally arrives, how do you relieve yourself from stress? Going for a movie, at least before the outbreak in 2020, is one of the most popular options. However, choosing a high-quality one may be difficult. This motivates us to investigate which of the most popular movies are also highly rated.
+After a busy week, when the weekend finally arrives, how do you relieve yourself from stress? Going for a movie, at least before the outbreak in 2020, is one of the most popular options. However, choosing a high-quality one may be difficult. To assist our decision, Internet Movie Dataset (IMDb) offers an incredible database of movie information and ratings. It also introduces a proprietary metric, named MOVIEmeter, that ranks movies by popularity. 
 
-To assist our decision, Internet Movie Dataset (IMDb) offers an incredible database of movie information and ratings. This website has continuously updated [Top 250](https://www.imdb.com/chart/top) and [Top 1000](https://www.imdb.com/search/title/?groups=top_1000) charts that rank all past movies based on their user vote counts and ratings. It also introduces a proprietary metric, named MOVIEmeter, that ranks movies by popularity.
-
+This motivates us to investigate which of the most popular movies are also highly rated.
 Considering the unprecedented impacts of Covid-19, I limited the study’s time scope to the past decade from 2010 to 2019. Location-wise, I decided to focus on the U.S. cinema, well known as Hollywood, since it is the oldest and the largest film industry. In brief, this study investigates the subset of English U.S. movies that were released in the 2010s and have a high popularity rank on IMDb.
 
 Our main question of interest surrounds the potential factors associated with the ratings of these movies. This study aims to highlight the most influential factors contributing to a high movie rating in the recent decade.
@@ -25,9 +24,9 @@ The dataset is accurate as of February 16, 2022. For each of the 300 movies, the
 
 -   `title`: a movie's English title, unique in this dataset
 
--   `rating`: the average rating on a scale from 1 to 10, rounded to 1 decimal place
+-   `rating`: the average IMDb rating on a scale from 1 to 10, rounded to 1 decimal place
 
--   `votes`: the total number of votes
+-   `votes`: the total number of votes on IMDb
 
 -   `run time`: the run time of a movie, in minutes
 

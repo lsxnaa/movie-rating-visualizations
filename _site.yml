@@ -17,5 +17,5 @@ output:
       after_body: footer.html
     css: styles.css
     toc: true
-    toc_float: true
+    toc_float: false
     toc_depth: 4

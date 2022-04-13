@@ -29,9 +29,6 @@
        h6 {font-size: 12px;}
        code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
        pre:not([class]) { background-color: white }</style>
-<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
-<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
-<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
@@ -228,69 +225,6 @@ $(document).ready(function () {
 
 
 
-<style type="text/css">
-
-#TOC {
-  margin: 25px 0px 20px 0px;
-}
-@media (max-width: 768px) {
-#TOC {
-  position: relative;
-  width: 100%;
-}
-}
-
-@media print {
-.toc-content {
-  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
-  float: right;
-}
-}
-
-.toc-content {
-  padding-left: 30px;
-  padding-right: 40px;
-}
-
-div.main-container {
-  max-width: 1200px;
-}
-
-div.tocify {
-  width: 20%;
-  max-width: 260px;
-  max-height: 85%;
-}
-
-@media (min-width: 768px) and (max-width: 991px) {
-  div.tocify {
-    width: 25%;
-  }
-}
-
-@media (max-width: 767px) {
-  div.tocify {
-    width: 100%;
-    max-width: none;
-  }
-}
-
-.tocify ul, .tocify li {
-  line-height: 20px;
-}
-
-.tocify-subheader .tocify-item {
-  font-size: 0.90em;
-}
-
-.tocify .list-group-item {
-  border-radius: 0px;
-}
-
-
-</style>
-
-
 
 </head>
 
@@ -298,16 +232,6 @@ div.tocify {
 
 
 <div class="container-fluid main-container">
-
-
-<!-- setup 3col/9col grid for toc_float and main content  -->
-<div class="row">
-<div class="col-xs-12 col-sm-4 col-md-3">
-<div id="TOC" class="tocify">
-</div>
-</div>
-
-<div class="toc-content col-xs-12 col-sm-8 col-md-9">
 
 
 
@@ -351,12 +275,17 @@ div.tocify {
 
 </div>
 
+<div id="TOC">
+<ul>
+<li><a href="#background-and-context">Background and Context</a></li>
+<li><a href="#about-the-dataset">About the Dataset</a></li>
+</ul>
+</div>
 
-<div id="a-brief-introduction" class="section level3">
-<h3>A Brief Introduction</h3>
-<p>After a busy week, when the weekend finally arrives, how do you relieve yourself from stress? Going for a movie, at least before the outbreak in 2020, is one of the most popular options. However, choosing a high-quality one may be difficult. This motivates us to investigate which of the most popular movies are also highly rated.</p>
-<p>To assist our decision, Internet Movie Dataset (IMDb) offers an incredible database of movie information and ratings. This website has continuously updated <a href="https://www.imdb.com/chart/top">Top 250</a> and <a href="https://www.imdb.com/search/title/?groups=top_1000">Top 1000</a> charts that rank all past movies based on their user vote counts and ratings. It also introduces a proprietary metric, named MOVIEmeter, that ranks movies by popularity.</p>
-<p>Considering the unprecedented impacts of Covid-19, I limited the study’s time scope to the past decade from 2010 to 2019. Location-wise, I decided to focus on the U.S. cinema, well known as Hollywood, since it is the oldest and the largest film industry. In brief, this study investigates the subset of English U.S. movies that were released in the 2010s and have a high popularity rank on IMDb.</p>
+<div id="background-and-context" class="section level3">
+<h3>Background and Context</h3>
+<p>After a busy week, when the weekend finally arrives, how do you relieve yourself from stress? Going for a movie, at least before the outbreak in 2020, is one of the most popular options. However, choosing a high-quality one may be difficult. To assist our decision, Internet Movie Dataset (IMDb) offers an incredible database of movie information and ratings. It also introduces a proprietary metric, named MOVIEmeter, that ranks movies by popularity.</p>
+<p>This motivates us to investigate which of the most popular movies are also highly rated. Considering the unprecedented impacts of Covid-19, I limited the study’s time scope to the past decade from 2010 to 2019. Location-wise, I decided to focus on the U.S. cinema, well known as Hollywood, since it is the oldest and the largest film industry. In brief, this study investigates the subset of English U.S. movies that were released in the 2010s and have a high popularity rank on IMDb.</p>
 <p>Our main question of interest surrounds the potential factors associated with the ratings of these movies. This study aims to highlight the most influential factors contributing to a high movie rating in the recent decade.</p>
 </div>
 <div id="about-the-dataset" class="section level3">
@@ -367,8 +296,8 @@ div.tocify {
 <p>The dataset is accurate as of February 16, 2022. For each of the 300 movies, the dataset includes the following information:</p>
 <ul>
 <li><p><code>title</code>: a movie’s English title, unique in this dataset</p></li>
-<li><p><code>rating</code>: the average rating on a scale from 1 to 10, rounded to 1 decimal place</p></li>
-<li><p><code>votes</code>: the total number of votes</p></li>
+<li><p><code>rating</code>: the average IMDb rating on a scale from 1 to 10, rounded to 1 decimal place</p></li>
+<li><p><code>votes</code>: the total number of votes on IMDb</p></li>
 <li><p><code>run time</code>: the run time of a movie, in minutes</p></li>
 <li><p><code>domestic gross</code>: gross box office in U.S. and Canada, in millions of U.S. dollars</p></li>
 <li><p><code>worldwide gross</code>: gross box office worldwide, in millions of U.S. dollars</p></li>
@@ -379,11 +308,9 @@ div.tocify {
 </ul>
 </div>
 
-<p style="text-align: center">Copyright &copy; 2022 Shixuan Li. All rights reserved.</p>
+<p style="text-align: center">Copyright &copy; 2022 S. Li. All rights reserved.</p>
 
 
-</div>
-</div>
 
 </div>
 
@@ -416,35 +343,6 @@ $(document).ready(function () {
 
 <!-- code folding -->
 
-<script>
-$(document).ready(function ()  {
-
-    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
-    $('.unlisted.unnumbered').addClass('toc-ignore')
-
-    // move toc-ignore selectors from section div to header
-    $('div.section.toc-ignore')
-        .removeClass('toc-ignore')
-        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
-
-    // establish options
-    var options = {
-      selectors: "h1,h2,h3,h4",
-      theme: "bootstrap3",
-      context: '.toc-content',
-      hashGenerator: function (text) {
-        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
-      },
-      ignoreSelector: ".toc-ignore",
-      scrollTo: 0
-    };
-    options.showAndHide = true;
-    options.smoothScroll = true;
-
-    // tocify
-    var toc = $("#TOC").tocify(options).data("toc-tocify");
-});
-</script>
 
 <!-- dynamically load mathjax for compatibility with self-contained -->
 <script>
