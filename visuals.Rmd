@@ -156,7 +156,7 @@ dt_low <- dt[rating_level=="Low"]
 
 To begin, Figure 1 shows the correlation between rating and continuous attributes through correlation coefficients and scatter plots. In addition, it compares the attributes' histogram distributions between higher-rated and lower-rated movies. Since the mean of the rating distribution is about 7.1, Figure 1 uses >7 (i.e. ≥7.1) as the default definition of high ratings. Using the slide bar, we can set different rating thresholds.
 
-<div style="text-align: left; margin-left: 64px; margin-bottom:0px; top: 20px; position: relative">
+<div style="text-align: left; margin-left: 64px; margin-bottom:0px; top: 18px; position: relative">
 
 <p style="margin-bottom:0px">
 
@@ -332,7 +332,10 @@ In comparison, there are a lot more deviations across the genre categories. Ther
 
 There are 185 unique stars and 200 unique directors. Since there are too many categories, I performed frequency encoding. The star/director frequency represents the number of times a star/director occurs in this dataset.
 
-The treemaps in Figure 3 demonstrate how movie ratings may correlate with star and director frequencies. Each individual tile represents one movie, with its colour determined by its rating. These movie tiles are divided into frequency groups. We can hover over a frequency tile to see the count and mean rating of that frequency group. We can also click on an individual movie tile to look at detailed movie information. Click again to go back.
+The treemaps in Figure 3 explores how movie ratings may correlate with star and director frequencies. Each individual tile represents one movie; and these movie tiles are grouped by the frequency tiles. A tile's colour corresponds to its mean rating. 
+
+To compare the counts and mean ratings of frequency groups, we can either look at the tiles' sizes and colours or hover over the tiles.
+We can also click on each individual movie tile to look at its detailed movie information. Click again to go back.
 
 
 ```{r fig.width=7.5}
@@ -421,7 +424,7 @@ plotly_treemap("director", p) %>%
 <details>
   <summary>Brief discussions</summary>
 Based on the size and the hover info of the grouping tiles, over 40% of the movies belong to the *freq 1* group.
-In the overall perspective, there is an obvious increase in the mean rating as the director frequency increases. In contrast, we do not observe any significant linear relationship between the star frequency and the movie rating. Surprisingly, the group of frequency 8 is the one with the lowest mean rating. This potentially suggests that the movie quality depends more on the experience of the director rather than the star.
+Overall, there is an obvious increase in the mean rating as the director frequency increases. In contrast, we do not observe any significant linear relationship between the star frequency and the movie rating. Surprisingly, the group of frequency 8 is the one with the lowest mean rating. This potentially suggests that the movie quality depends more on the experience of the director rather than the star.
 <br>
 <br>
 </details>
