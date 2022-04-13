@@ -66,6 +66,12 @@ u {
 #TOC {
   margin-top: 15px;
   margin-bottom: 20px;
+  margin-left: 3px;
+}
+
+#TOC ul {
+  border-left: 3px solid lightblue;
+  border-radius: 7px;
 }
 
 #G1slider {
