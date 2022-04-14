@@ -369,7 +369,9 @@ plotly_treemap <- function(col="director", p=NA) {
   lab <- paste("Freq", as.character(levels(d$freq)))
   title <- "" 
   par <- rep(title, times=length(lab))
-  txt <- paste0("---\nNo. Movies : ", dt[,.N, by = col_freq][order(get(col_freq), decreasing=T), N], rep("\nMean ", times=length(lab)))
+  nmovies <- dt[,.N, by = col_freq][order(get(col_freq), decreasing=T), N]
+  np <- nmovies / as.integer(levels(d$freq))
+  txt <- paste0("---\nNo. Movies : ", nmovies, "\nNo. Unique ", type, "s : ", np, rep("\nMean ", times=length(lab)))
   #lab <- c(lab, paste0(type, "Freq : ", dt[,get(col_freq)], '\n"', dt$title, '"'))
   lab <- c(lab, paste0('"', dt$title, '"\n---'))
   par <- c(par, paste("Freq", dt[, get(col_freq)]))
