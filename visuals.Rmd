@@ -152,9 +152,13 @@ dt_high <- dt[rating_level=="High"]
 dt_low <- dt[rating_level=="Low"]
 ```
 
+Each section corresponds to one interactive graph. They explore associations between the response variable `rating` and different predictors. Each graph is also followed by a foldable *brief discussions* section.
+
 ### Rating vs. Votes, Runtime, Domestics Gross, and Worldwide Gross
 
-To begin, Figure 1 shows the correlation between rating and continuous attributes through correlation coefficients and scatter plots. In addition, it compares the attributes' histogram distributions between higher-rated and lower-rated movies. Since the mean of the rating distribution is about 7.1, Figure 1 uses >7 (i.e. ≥7.1) as the default definition of high ratings. Using the slide bar, we can set different rating thresholds.
+To begin, Figure 1 shows the correlation between rating and continuous attributes through correlation coefficients and scatter plots. In addition, it compares the attributes' histogram distributions between higher-rated and lower-rated movies.
+
+Since the mean of the rating distribution is about 7.1, Figure 1 uses >7 (i.e. ≥7.1) as the default definition of high ratings. Using the slide bar, we can set different rating thresholds.
 
 <div style="text-align: left; margin-left: 64px; margin-bottom:0px; top: 18px; position: relative">
 
@@ -185,6 +189,8 @@ colnames(G1longdt) <- c("rating", "name", "value", "rating level")
 
 cors <- round(cor(dt[,..cols])[2:5,1],3)
 G1longdt$name2 <- factor(G1longdt$name, levels=levels(G1longdt$name), labels=paste("Corr:", cors))
+G1longdt1 <- G1longdt
+G1longdt1$value <- round(G1longdt1$value, 1)
 
 plotG1 <- function(th) {
   
@@ -195,6 +201,7 @@ plotG1 <- function(th) {
      clrs <- rev(clrs)
   }
   G1longdt$`rating level` <- factor(ifelse(G1longdt$rating>th, "high", "low"), levels=lvl)
+  G1longdt1$`rating level` <- G1longdt$`rating level`
 
   g1 <- ggplot(G1longdt, aes(x=value, fill=`rating level`)) + 
     scale_fill_manual(values=clrs) +
@@ -210,7 +217,7 @@ plotG1 <- function(th) {
           strip.text.x = element_text(size=10))
 
 
-  g11 <- ggplot(G1longdt, aes(x=value, y=rating, color=`rating level`)) + 
+  g11 <- ggplot(G1longdt1, aes(x=value, y=rating, color=`rating level`)) + 
     scale_color_manual(values=clrs) +
     geom_point(alpha=0.2) +
     facet_wrap(~name2, scales="free_x", nrow=1) +
@@ -230,7 +237,9 @@ plotG1 <- function(th) {
     layout(
       yaxis2=list(title="Rating"), font=list(size=12),
       annotations=list(
-        list(x=0, y=-0.105, showarrow = F, xref='paper', yref='paper', font=list(size=12), text=paste0("Figure 1. The continuous attributes' correlation with rating and distribution by rating level with threshold ", th, "."))
+        list(x=0, y=-0.105, showarrow = F, xref='paper', yref='paper', font=list(size=12), text=paste0("Figure 1. The continuous attributes' correlation with rating and distribution by rating level with threshold ", th, ".")),
+        list(x=0.998, y=0.722, showarrow = F, xref='paper', yref='paper', font=list(size=12, color="#F87660"), text="high"),
+        list(x=0.995, y=0.02, showarrow = F, xref='paper', yref='paper', font=list(size=12, color="#00BFC4"), text="low")
       )
     ) )
 }
@@ -279,7 +288,7 @@ function updateG1(th) {
 
 <details>
   <summary>Brief discussions</summary>
-By the grouped histogram and scatter plot, there is a moderate, positive correlation between the number of votes and the rating. There is also a weak, positive correlation between rating and runtime. In comparison, there is not an obvious, significant correlation between rating and the box office variables. 
+By both the histograms and the scatter plot, there is a moderate, positive correlation between the number of votes and the rating. There is also a weak, positive correlation between rating and runtime. In comparison, there is not an obvious, significant correlation between rating and the box office variables. The distributions of all four predictors are more or less right-skewed. In all four cases, the most extreme outliers have above-average ratings.
 
 </details>
 
@@ -332,13 +341,13 @@ In comparison, there are a lot more deviations across the genre categories. Ther
 
 There are 185 unique stars and 200 unique directors. Since there are too many categories, I performed frequency encoding. The star/director frequency represents the number of times a star/director occurs in this dataset.
 
-The treemaps in Figure 3 explores how movie ratings may correlate with star and director frequencies. Each individual tile represents one movie; and these movie tiles are grouped by the frequency tiles. A tile's colour corresponds to its mean rating. 
+Figure 3 was created using `plot_ly(type="treemap")`. It explores how movie ratings may correlate with star and director frequencies. Each individual tile represents one movie; and these movie tiles are grouped by the frequency tiles. A tile's colour corresponds to its mean rating. 
 
 To compare the counts and mean ratings of frequency groups, we can either look at the tiles' sizes and colours or hover over the tiles.
 We can also click on each individual movie tile to look at its detailed movie information. Click again to go back.
 
 
-```{r fig.width=7.5}
+```{r fig.width=8.3}
 ## Figure 3
 image_file <- "./img/scale.png"
 txt <- RCurl::base64Encode(readBin(image_file, "raw", file.info(image_file)[1, "size"]), "txt")
@@ -409,14 +418,14 @@ p <- plotly_treemap("star")
 plotly_treemap("director", p) %>%
   layout(
     grid=list(columns=2, rows=1), tracegroupgap=0,
-    margin=list(l=0, r=0, b=20, t=0),
+    margin=list(l=30, r=65, b=20, t=0),
   annotations=list(list(
     x=0, y=-0.035, xshift=3, showarrow = F, xref='paper', yref='paper',
-    font=list(size=12, color="black"), text="Figure 3. Movies and their ratings grouped by star and director frequencies."),
+    font=list(size=12, color="black"), text="Figure 3. Movies ratings grouped by star and director frequencies. There are 300 movies, 185 stars, and 200 directors."),
     list(x=0.12, y=1, showarrow=F, xref='paper', yref='paper', font=list(size=14, color="black"), text="Movies by Star Frequency"),
     list(x=0.92, y=1, showarrow=F, xref='paper', yref='paper', font=list(size=14, color="black"), text="Movies by Director Frequency")
     ),
-  images=list(list(source=paste('data:image/png;base64', txt, sep=','), xref='paper', yref='paper', x=0.478, y=0.66, sizex=0.8, sizey=0.27, layer="above"))
+  images=list(list(source=paste('data:image/png;base64', txt, sep=','), xref='paper', yref='paper', x=1.025, y=0.66, sizex=0.9, sizey=0.302, layer="above"))
   )
 
 ```

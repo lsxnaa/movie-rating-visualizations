@@ -1,7 +1,7 @@
 name: "Movie Rating Analysis"
 output_dir: "."
 navbar:
-  title: "Movie Rating Analysis"
+  title: "&#127909; Movie Rating Analysis"
   left:
     - text: "Context and Dataset"
       href: index.html
