@@ -356,7 +356,7 @@ plotly_treemap <- function(col="director", p=NA) {
   if (col == "director") {
     d <- ddirector
     type <- "Director"
-    abbr <- "Dir."
+    abbr <- "Director"
     col_freq <- "director_freq"
   } else {
     d <- dstar
@@ -366,19 +366,21 @@ plotly_treemap <- function(col="director", p=NA) {
     col_freq <- "star_freq"
   }
 
-  lab <- paste("Freq :", as.character(levels(d$freq)))
+  lab <- paste("Freq", as.character(levels(d$freq)))
   title <- "" 
   par <- rep(title, times=length(lab))
-  txt <- paste0("No. Movies : ", dt[,.N, by = col_freq][order(get(col_freq), decreasing=T), N], rep("\nMean ", times=length(lab)))
-  lab <- c(lab, paste0("Freq : ", dt[,get(col_freq)], '\n"', dt$title, '"'))
-  par <- c(par, paste("Freq :", dt[, get(col_freq)]))
+  txt <- paste0("---\nNo. Movies : ", dt[,.N, by = col_freq][order(get(col_freq), decreasing=T), N], rep("\nMean ", times=length(lab)))
+  #lab <- c(lab, paste0(type, "Freq : ", dt[,get(col_freq)], '\n"', dt$title, '"'))
+  lab <- c(lab, paste0('"', dt$title, '"\n---'))
+  par <- c(par, paste("Freq", dt[, get(col_freq)]))
   #val <- c(300, 20, 18, 106, 136)
   #val <- c(val, frequency)
   val <- unlist(dt[, mean(rating), by=col_freq][order(get(col_freq), decreasing=T),2], use.names=F)
   val <- c(val, dt$rating)
   
   txt <- paste0(c(txt, paste0(
-    paste(abbr, ":", dt[, get(col)], "\n"))), 
+    paste(abbr, ":", dt[, get(col)], "\n"),
+    paste(type, "Frequency :", dt[,get(col_freq)], "\n"))), 
     paste("Rating :",round(val, 1)))
    
   
@@ -398,7 +400,8 @@ plotly_treemap <- function(col="director", p=NA) {
       text=txt,
       sort=F,
       domain=list(column=0),
-      hovertemplate="%{label}<br>%{text}<extra></extra>"
+      hovertemplate="%{label}<br>%{text}<extra></extra>",
+      textposition="middle left"
     )
   } else {
     add_trace(p,
@@ -409,7 +412,8 @@ plotly_treemap <- function(col="director", p=NA) {
       text=txt,
       sort=F,
       domain=list(column=1),
-      hovertemplate="%{label}<br>%{text}<extra></extra>"
+      hovertemplate="%{label}<br>%{text}<extra></extra>",
+      textposition="middle left"
     )
   }
 }
@@ -421,7 +425,7 @@ plotly_treemap("director", p) %>%
     margin=list(l=30, r=65, b=20, t=0),
   annotations=list(list(
     x=0, y=-0.035, xshift=3, showarrow = F, xref='paper', yref='paper',
-    font=list(size=12, color="black"), text="Figure 3. Movies ratings grouped by star and director frequencies. There are 300 movies, 185 stars, and 200 directors."),
+    font=list(size=12, color="black"), text="Figure 3. Movies and ratings by star and director frequencies. There are 300 movies, 185 stars, and 200 directors."),
     list(x=0.12, y=1, showarrow=F, xref='paper', yref='paper', font=list(size=14, color="black"), text="Movies by Star Frequency"),
     list(x=0.92, y=1, showarrow=F, xref='paper', yref='paper', font=list(size=14, color="black"), text="Movies by Director Frequency")
     ),
