@@ -237,7 +237,7 @@ plotG1 <- function(th) {
     layout(
       yaxis2=list(title="Rating"), font=list(size=12),
       annotations=list(
-        list(x=0, y=-0.105, showarrow = F, xref='paper', yref='paper', font=list(size=12), text=paste0("Figure 1. The continuous attributes' correlation with rating and distribution by rating level with threshold ", th, ".")),
+        list(x=0, y=-0.11, showarrow = F, xref='paper', yref='paper', font=list(size=12), text=paste0("Figure 1. The continuous attributes' correlation with rating and distribution by rating level with threshold ", th, ".")),
         list(x=0.998, y=0.722, showarrow = F, xref='paper', yref='paper', font=list(size=12, color="#F87660"), text="high"),
         list(x=0.995, y=0.02, showarrow = F, xref='paper', yref='paper', font=list(size=12, color="#00BFC4"), text="low")
       )
@@ -424,7 +424,7 @@ p <- plotly_treemap("star")
 plotly_treemap("director", p) %>%
   layout(
     grid=list(columns=2, rows=1), tracegroupgap=0,
-    margin=list(l=30, r=65, b=20, t=0),
+    margin=list(l=30, r=65, b=33, t=0),
   annotations=list(list(
     x=0, y=-0.035, xshift=3, showarrow = F, xref='paper', yref='paper',
     font=list(size=12, color="black"), text="Figure 3. Movies and ratings by star and director frequencies. There are 300 movies, 185 stars, and 200 directors."),
